@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Daily Task Tracker</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: linear-gradient(to right, #6a11cb, #2575fc);
+      margin: 0;
+      padding: 20px;
+      color: #fff;
+    }
+    h1 {
+      text-align: center;
+      margin-bottom: 10px;
+    }
+    #dateTime {
+      text-align: center;
+      margin: 10px 0;
+      font-size: 18px;
+      color: #f1f1f1;
+    }
+    .task-container {
+      max-width: 600px;
+      margin: 20px auto;
+      background: #fff;
+      padding: 20px;
+      border-radius: 12px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+      color: #333;
+    }
+    h2 {
+      text-align: center;
+      color: #007bff;
+    }
+    .task {
+      display: flex;
+      align-items: center;
+      margin: 10px 0;
+      padding: 10px;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      transition: background-color 0.3s ease;
+    }
+    .task:hover {
+      background-color: #f7f7f7;
+    }
+    .task input[type="checkbox"] {
+      margin-right: 10px;
+      transform: scale(1.5);
+      cursor: pointer;
+    }
+    .task label {
+      flex-grow: 1;
+      font-size: 16px;
+    }
+    .hidden {
+      display: none;
+    }
+    button {
+      display: block;
+      margin: 20px auto;
+      padding: 10px 20px;
+      font-size: 16px;
+      color: #fff;
+      background: #007bff;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+    }
+    button:hover {
+      background: #0056b3;
+    }
+    footer {
+      text-align: center;
+      margin-top: 20px;
+      font-size: 16px;
+      color: #f1f1f1;
+    }
+    @keyframes tick {
+      0% { transform: scale(1); }
+      50% { transform: scale(1.3); }
+      100% { transform: scale(1); }
+    }
+    #streakContainer {
+      max-width: 600px;
+      margin: 20px auto;
+      background: #fff;
+      padding: 20px;
+      border-radius: 12px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+      color: #333;
+    }
+    .streak-box {
+      display: grid;
+      grid-template-columns: repeat(9, 1fr);
+      gap: 5px;
+      justify-content: center;
+      margin: 20px 0;
+    }
+    .streak-box div {
+      width: 20px;
+      height: 20px;
+      border-radius: 4px;
+      background-color: #ddd;
+    }
+    .streak-box div.active {
+      background-color: #6a11cb;
+    }
+    .streak-box div.completed {
+      background-color: #007bff;
+    }
+  </style>
+</head>
+<body>
+  <h1>Daily Task Tracker</h1>
+  <div id="dateTime"></div>
+  <div class="task-container" id="taskContainer">
+    <h2>Tasks for the Day</h2>
+    <div class="task" id="task1">
+      <input type="checkbox" onclick="completeTask('task1')">
+      <label>Maths: Solve PYQs (1 chapter)</label>
+    </div>
+    <div class="task" id="task2">
+      <input type="checkbox" onclick="completeTask('task2')">
+      <label>Science: Revise 1 chapter</label>
+    </div>
+    <div class="task" id="task3">
+      <input type="checkbox" onclick="completeTask('task3')">
+      <label>English/Hindi: Practice grammar or literature</label>
+    </div>
+    <div class="task" id="task4">
+      <input type="checkbox" onclick="completeTask('task4')">
+      <label>SST: Revise one topic</label>
+    </div>
+    <div class="task" id="task5">
+      <input type="checkbox" onclick="completeTask('task5')">
+      <label>1 Hour of Design Work</label>
+    </div>
+    <div class="task" id="task6">
+      <input type="checkbox" onclick="completeTask('task6')">
+      <label>Mock Test or Practice Paper</label>
+    </div>
+  </div>
+
+  <div id="streakContainer">
+    <h2>Your Streak</h2>
+    <div class="streak-box" id="streakBox"></div>
+    <p id="streakMessage"></p>
+  </div>
+
+  <footer id="countdown"></footer>
+
+  <script>
+    // Initialize tasks based on local storage
+    const today = new Date().toISOString().split('T')[0]; // Get current date in YYYY-MM-DD format
+    const lastReset = localStorage.getItem('lastReset');
+    if (lastReset !== today) {
+      localStorage.clear(); // Clear completed tasks if it's a new day
+      localStorage.setItem('lastReset', today);
+    }
+
+    
+    // Function to mark a task as completed
+    function completeTask(taskId) {
+      const taskElement = document.getElementById(taskId);
+      const checkbox = taskElement.querySelector('input[type="checkbox"]');
+
+      if (checkbox.checked) {
+        taskElement.style.animation = 'tick 0.3s ease';
+        setTimeout(() => {
+          taskElement.classList.add('hidden');
+        }, 300);
+        localStorage.setItem(taskId, 'completed');
+        playTickSound();
+        checkCompletion();
+      }
+    }
+
+    // Load tasks and hide completed ones
+    window.onload = function () {
+      const tasks = document.querySelectorAll('.task');
+      tasks.forEach(task => {
+        const taskId = task.id;
+        if (localStorage.getItem(taskId) === 'completed') {
+          task.classList.add('hidden');
+        }
+      });
+
+      updateDateTime(); // Update date and time on page load
+      setInterval(updateDateTime, 1000); // Update every second
+      updateCountdown(); // Update countdown on page load
+      setInterval(updateCountdown, 1000); // Update every second
+
+      initializeStreak(); // Initialize the streak grid
+    };
+
+    // Function to check if all tasks are completed
+    function checkCompletion() {
+      const tasks = document.querySelectorAll('.task');
+      const completed = Array.from(tasks).every(task => {
+        const taskId = task.id;
+        return localStorage.getItem(taskId) === 'completed';
+      });
+
+      if (completed) {
+        alert("You're done with your goals to 95%! Keep up the great work!");
+        incrementStreak();
+      }
+    }
+
+    // Function to display date and time
+    function updateDateTime() {
+      const now = new Date();
+      const year = now.getFullYear();
+      const month = String(now.getMonth() + 1).padStart(2, '0');
+      const date = String(now.getDate()).padStart(2, '0');
+      const hours = String(now.getHours()).padStart(2, '0');
+      const minutes = String(now.getMinutes()).padStart(2, '0');
+      const seconds = String(now.getSeconds()).padStart(2, '0');
+      const dateTimeString = `${year}-${month}-${date} ${hours}:${minutes}:${seconds}`;
+      document.getElementById('dateTime').textContent = dateTimeString;
+    }
+
+    // Function to calculate and display countdown to 15th February
+    function updateCountdown() {
+      const now = new Date();
+      const targetDate = new Date(now.getFullYear(), 1, 15, 0, 0, 0); // 15th February at midnight
+      if (now.getMonth() > 1 || (now.getMonth() === 1 && now.getDate() > 15)) {
+        targetDate.setFullYear(targetDate.getFullYear() + 1); // If past 15th Feb, target next year
+      }
+
+      const timeDiff = targetDate - now;
+      const days = Math.floor(timeDiff / (1000 * 60 * 60 * 24));
+      const hours = Math.floor((timeDiff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+      const minutes = Math.floor((timeDiff % (1000 * 60 * 60)) / (1000 * 60));
+      const seconds = Math.floor((timeDiff % (1000 * 60)) / 1000);
+
+      document.getElementById('countdown').textContent = `Time left to 15th February: ${days} days, ${hours} hours, ${minutes} minutes, ${seconds} seconds`;
+    }
+
+    // Function to initialize the streak grid
+    function initializeStreak() {
+      const streakBox = document.getElementById('streakBox');
+      const streakCount = localStorage.getItem('streak') || 0;
+
+      for (let i = 0; i < 45; i++) {
+        const dayBox = document.createElement('div');
+        if (i < streakCount) {
+          dayBox.classList.add('completed');
+        } else if (i === streakCount) {
+          dayBox.classList.add('active');
+        }
+        streakBox.appendChild(dayBox);
+      }
+
+      updateStreakMessage(streakCount);
+    }
+
+    // Function to increment streak
+    function incrementStreak() {
+      let streakCount = parseInt(localStorage.getItem('streak')) || 0;
+      if (streakCount < 45) {
+        streakCount++;
+        localStorage.setItem('streak', streakCount);
+        initializeStreak(); // Reinitialize streak grid
+      }
+    }
+
+    // Function to update streak message
+    function updateStreakMessage(streakCount) {
+      const streakMessage = document.getElementById('streakMessage');
+      streakMessage.textContent = `Current Streak: ${streakCount} days`;
+    }
+  </script>
+</body>
+</html>
