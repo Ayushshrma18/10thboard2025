@@ -5,8 +5,10 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Daily Task Tracker</title>
   <style>
+    @import url('https://fonts.googleapis.com/css2?family=SF+Pro:wght@400;600&display=swap');
+
     body {
-      font-family: Arial, sans-serif;
+      font-family: 'SF Pro', Arial, sans-serif;
       background: linear-gradient(to right, #6a11cb, #2575fc);
       margin: 0;
       padding: 20px;
@@ -113,12 +115,63 @@
     .streak-box div.completed {
       background-color: #007bff;
     }
+     /* Dark mode styles */
+     .dark-mode {
+      background: #121212;
+      color: #e0e0e0;
+    }
+
+    .dark-mode h2 {
+      color: #80c4ff;
+    }
+
+    .dark-mode button {
+      background: #303f9f;
+      color: #fff;
+    }
+
+    .dark-mode button:hover {
+      background: #1c2780;
+    }
+
+    /* Toggle button for dark mode */
+    .dark-mode-toggle {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      background: #fff;
+      color: #000;
+      border: 2px solid #000;
+      font-size: 0.9rem;
+      padding: 5px 10px;
+      border-radius: 5px;
+      cursor: pointer;
+      transition: background 0.3s ease, color 0.3s ease;
+    }
+
+    .dark-mode-toggle:hover {
+      background: #000;
+      color: #fff;
+    }
   </style>
 </head>
 <body>
-  <h1>Daily Task Tracker</h1>
+    <body>
+        <button class="dark-mode-toggle" onclick="toggleDarkMode()">Dark Mode</button>
+        <div class="center-container">
+          <h1 id="welcomeMessage">Welcome to Your Daily Task Tracker</h1>
+          <div id="namePrompt">
+            <h2>Please Enter Your Name:</h2>
+            <input type="text" id="userName" placeholder="Your Name">
+            <button onclick="saveUserName()">Submit</button>
+          </div>
+          <div id="dateTime"></div>
+          <footer id="countdown"></footer>
+        </div>
+
+
   <div id="dateTime"></div>
-  <div class="task-container" id="taskContainer">
+  <div class="task-container" id="taskContainer" style="display: none;">
     <h2>Tasks for the Day</h2>
     <div class="task" id="task1">
       <input type="checkbox" onclick="completeTask('task1')">
@@ -146,7 +199,7 @@
     </div>
   </div>
 
-  <div id="streakContainer">
+  <div id="streakContainer" style="display: none;">
     <h2>Your Streak</h2>
     <div class="streak-box" id="streakBox"></div>
     <p id="streakMessage"></p>
@@ -155,16 +208,55 @@
   <footer id="countdown"></footer>
 
   <script>
-    // Initialize tasks based on local storage
-    const today = new Date().toISOString().split('T')[0]; // Get current date in YYYY-MM-DD format
-    const lastReset = localStorage.getItem('lastReset');
-    if (lastReset !== today) {
-      localStorage.clear(); // Clear completed tasks if it's a new day
-      localStorage.setItem('lastReset', today);
+    function toggleDarkMode() {
+      document.body.classList.toggle('dark-mode');
     }
 
-    
-    // Function to mark a task as completed
+
+    // Initialize user name
+    const userName = localStorage.getItem('userName');
+    const namePrompt = document.getElementById('namePrompt');
+    const taskContainer = document.getElementById('taskContainer');
+    const streakContainer = document.getElementById('streakContainer');
+
+    if (userName) {
+      namePrompt.style.display = 'none';
+      taskContainer.style.display = 'block';
+      streakContainer.style.display = 'block';
+      document.getElementById('welcomeMessage').textContent = `Welcome Back, ${userName}! Let's Achieve Your Goals Today!`;
+    }
+
+    function saveUserName() {
+      const nameInput = document.getElementById('userName').value;
+      if (nameInput.trim()) {
+        localStorage.setItem('userName', nameInput);
+        namePrompt.style.display = 'none';
+        taskContainer.style.display = 'block';
+        streakContainer.style.display = 'block';
+        document.getElementById('welcomeMessage').textContent = `Welcome, ${nameInput}! Let's Achieve Your Goals Today!`;
+      }
+    }
+
+    // Play tick sound
+    function playTickSound() {
+      const audio = new Audio('https://www.soundjay.com/button/beep-07.wav'); // Example tick sound
+      audio.play();
+    }
+
+    // Motivate user
+    function motivateUser() {
+      const messages = [
+        "Great job! Keep going!",
+        "You're doing amazing, keep it up!",
+        "One step closer to your goals!",
+        "Fantastic! You're on fire!",
+        "Keep pushing, you’ve got this!"
+      ];
+      const randomMessage = messages[Math.floor(Math.random() * messages.length)];
+      alert(`${randomMessage}`);
+    }
+
+    // Mark a task as completed
     function completeTask(taskId) {
       const taskElement = document.getElementById(taskId);
       const checkbox = taskElement.querySelector('input[type="checkbox"]');
@@ -176,29 +268,12 @@
         }, 300);
         localStorage.setItem(taskId, 'completed');
         playTickSound();
+        motivateUser();
         checkCompletion();
       }
     }
 
-    // Load tasks and hide completed ones
-    window.onload = function () {
-      const tasks = document.querySelectorAll('.task');
-      tasks.forEach(task => {
-        const taskId = task.id;
-        if (localStorage.getItem(taskId) === 'completed') {
-          task.classList.add('hidden');
-        }
-      });
-
-      updateDateTime(); // Update date and time on page load
-      setInterval(updateDateTime, 1000); // Update every second
-      updateCountdown(); // Update countdown on page load
-      setInterval(updateCountdown, 1000); // Update every second
-
-      initializeStreak(); // Initialize the streak grid
-    };
-
-    // Function to check if all tasks are completed
+    // Check if all tasks are completed
     function checkCompletion() {
       const tasks = document.querySelectorAll('.task');
       const completed = Array.from(tasks).every(task => {
@@ -207,12 +282,12 @@
       });
 
       if (completed) {
-        alert("You're done with your goals to 95%! Keep up the great work!");
+        alert(`You're done with your goals to 95%, ${userName}! Keep up the great work!`);
         incrementStreak();
       }
     }
 
-    // Function to display date and time
+    // Display date and time
     function updateDateTime() {
       const now = new Date();
       const year = now.getFullYear();
@@ -225,12 +300,12 @@
       document.getElementById('dateTime').textContent = dateTimeString;
     }
 
-    // Function to calculate and display countdown to 15th February
+    // Countdown to 15th February
     function updateCountdown() {
       const now = new Date();
-      const targetDate = new Date(now.getFullYear(), 1, 15, 0, 0, 0); // 15th February at midnight
+      const targetDate = new Date(now.getFullYear(), 1, 15, 0, 0, 0);
       if (now.getMonth() > 1 || (now.getMonth() === 1 && now.getDate() > 15)) {
-        targetDate.setFullYear(targetDate.getFullYear() + 1); // If past 15th Feb, target next year
+        targetDate.setFullYear(targetDate.getFullYear() + 1);
       }
 
       const timeDiff = targetDate - now;
@@ -242,39 +317,59 @@
       document.getElementById('countdown').textContent = `Time left to 15th February: ${days} days, ${hours} hours, ${minutes} minutes, ${seconds} seconds`;
     }
 
-    // Function to initialize the streak grid
+    // Initialize streak
     function initializeStreak() {
       const streakBox = document.getElementById('streakBox');
       const streakCount = localStorage.getItem('streak') || 0;
 
+      streakBox.innerHTML = ''; // Clear previous streak grid
       for (let i = 0; i < 45; i++) {
-        const dayBox = document.createElement('div');
+        const streakDay = document.createElement('div');
         if (i < streakCount) {
-          dayBox.classList.add('completed');
+          streakDay.classList.add('completed');
         } else if (i === streakCount) {
-          dayBox.classList.add('active');
+          streakDay.classList.add('active');
         }
-        streakBox.appendChild(dayBox);
+        streakBox.appendChild(streakDay);
       }
 
-      updateStreakMessage(streakCount);
-    }
-
-    // Function to increment streak
-    function incrementStreak() {
-      let streakCount = parseInt(localStorage.getItem('streak')) || 0;
-      if (streakCount < 45) {
-        streakCount++;
-        localStorage.setItem('streak', streakCount);
-        initializeStreak(); // Reinitialize streak grid
-      }
-    }
-
-    // Function to update streak message
-    function updateStreakMessage(streakCount) {
       const streakMessage = document.getElementById('streakMessage');
-      streakMessage.textContent = `Current Streak: ${streakCount} days`;
+      streakMessage.textContent = `Your current streak is ${streakCount} day(s)! Keep going!`;
     }
+
+    // Increment streak
+    function incrementStreak() {
+      let streakCount = parseInt(localStorage.getItem('streak') || '0', 10);
+      streakCount += 1;
+      localStorage.setItem('streak', streakCount);
+      initializeStreak();
+    }
+
+    // Reset streak if a day is missed
+    function resetStreakIfNeeded() {
+      const today = new Date().toISOString().split('T')[0];
+      const lastCompletedDate = localStorage.getItem('lastCompletedDate');
+      if (lastCompletedDate && today !== lastCompletedDate) {
+        localStorage.setItem('streak', '0'); // Reset streak
+      }
+      localStorage.setItem('lastCompletedDate', today);
+    }
+
+    // Initialize tasks and streak on page load
+    window.onload = function () {
+      resetStreakIfNeeded();
+      initializeStreak();
+      const tasks = document.querySelectorAll('.task');
+      tasks.forEach(task => {
+        const taskId = task.id;
+        if (localStorage.getItem(taskId) === 'completed') {
+          task.classList.add('hidden');
+        }
+      });
+
+      setInterval(updateDateTime, 1000); // Update date and time every second
+      setInterval(updateCountdown, 1000); // Update countdown every second
+    };
   </script>
 </body>
 </html>
